@@ -276,14 +276,21 @@ document.addEventListener("keydown",e=>{if($("fm").classList.contains("on")){if(
 $("fm").addEventListener("click",e=>{if(e.target.id==="fm")hideFM()});
 // ---- 映像（YouTube IFrame Player API。区間は start/end で指定） ----
 let P=null,ready=false,cueAt=0,advancing=false,muted=false,apiFail=false;
-window.onYouTubeIframeAPIReady=()=>{P=new YT.Player("player",{playerVars:{rel:0,playsinline:1,controls:1,modestbranding:1,iv_load_policy:3,origin:location.origin},
- events:{onReady:()=>{ready=true},onStateChange:onState,onError:onErr}})};
-setTimeout(()=>{if(!ready)apiFail=true},12000);
+// v1.6.7: 再生部品（YouTube の枠）は「映像を見る」を押したときに作り、資料に戻ると取り除く。
+// 映像を見ていない間は YouTube の枠が1つも無い（ページを開いた・復元しただけでは YouTube を読み込まない）。
+let apiLoaded=false,pending=null;
+window.onYouTubeIframeAPIReady=()=>{apiLoaded=true};
+function makePlayer(cb){pending=cb;if(P)return;
+ P=new YT.Player("player",{playerVars:{rel:0,playsinline:1,controls:1,modestbranding:1,iv_load_policy:3,origin:location.origin},
+ events:{onReady:()=>{ready=true;const f=pending;pending=null;if(f)f()},onStateChange:onState,onError:onErr}})}
+function dropPlayer(){pending=null;if(!P)return;try{P.stopVideo()}catch(e){}try{P.destroy()}catch(e){}P=null;ready=false;
+ if(!$("player")){const d=document.createElement("div");d.id="player";$("pbox").insertBefore(d,$("cover"))}}
+setTimeout(()=>{if(!apiLoaded)apiFail=true},12000);
 function clip(){return CLIPS[cur][ST[cur].i]}
 function msg(t,ms){const m=$("msg");m.textContent=t;m.style.display=t?"block":"none";if(ms)setTimeout(()=>{if(m.textContent===t)m.style.display="none"},ms)}
 let coverFrom=0;function showCover(c){const cv=$("cover");cv.style.backgroundImage=`url(https://i.ytimg.com/vi/${c.v}/hqdefault.jpg)`;$("covert").textContent=c.label;cv.classList.add("on")}
 function hideCover(){$("cover").classList.remove("on")}
-function cue(t){const st=ST[cur],c=clip();cueAt=Date.now();advancing=false;st.started=true;showCover(c);
+function cue(t){if(!P||!ready)return;const st=ST[cur],c=clip();cueAt=Date.now();advancing=false;st.started=true;showCover(c);
  const o={videoId:c.v,startSeconds:(t!=null&&t>=c.s&&t<c.e-1)?t:c.s,endSeconds:c.e};coverFrom=o.startSeconds;P.loadVideoById(o);if(muted)P.mute();else P.unMute();
  st.t=o.startSeconds;drawBar();msg("")}
 function drawBar(){const st=ST[cur],c=clip(),n=CLIPS[cur].length;
@@ -293,13 +300,14 @@ function drawBar(){const st=ST[cur],c=clip(),n=CLIPS[cur].length;
 function openVideo(k,from){ // from: null=続きから / 数字=その映像から最初
  // ファイルを直接開いた場合（受講者がダウンロードして開いた場合など）は、資料の中では再生できないので、元の動画を YouTube の新しいタブで開く（2026-10-23）
  if(location.protocol==="file:"){showFM(k);return}
- if(!ready&&apiFail){showFM(k);return}
- if(!ready){alert(apiFail?"YouTube を読み込めませんでした。インターネットの接続を確かめてください。\n（映像の下の小さな絵を押すと YouTube のページでも見られます）":"映像の準備中です。数秒後にもう一度押してください。");return}
+ if(!apiLoaded&&apiFail){showFM(k);return}
+ if(!apiLoaded){alert(apiFail?"YouTube を読み込めませんでした。インターネットの接続を確かめてください。\n（映像の下の小さな絵を押すと YouTube のページでも見られます）":"映像の準備中です。数秒後にもう一度押してください。");return}
  const st=ST[k];if(from!=null){st.i=from;st.t=null}
- mode="video";$("ov").classList.add("show");$("notes").classList.remove("show");cue(st.t)}
-function closeVideo(){if(mode!=="video")return;try{const t=P.getCurrentTime();if(t)ST[cur].t=t;P.pauseVideo()}catch(e){}
- mode="slides";$("ov").classList.remove("show");refreshBtn(cur)}
-function finish(){const st=ST[cur];st.i=0;st.t=null;st.started=false;try{P.stopVideo()}catch(e){}
+ mode="video";$("ov").classList.add("show");$("notes").classList.remove("show");showCover(CLIPS[k][st.i]);
+ if(ready)cue(st.t);else makePlayer(()=>{if(mode==="video"&&cur===k)cue(ST[k].t)})}
+function closeVideo(){if(mode!=="video")return;try{const c=clip(),t=P.getCurrentTime();if(t>=c.s-1&&t<=c.e+1)ST[cur].t=t}catch(e){}
+ dropPlayer();mode="slides";$("ov").classList.remove("show");refreshBtn(cur)}
+function finish(){const st=ST[cur];st.i=0;st.t=null;st.started=false;dropPlayer();
  mode="slides";$("ov").classList.remove("show");slides[cur].querySelectorAll(".chip").forEach(ch=>ch.classList.add("seen"));refreshBtn(cur)}
 function next(){if(advancing)return;advancing=true;const st=ST[cur];if(st.i+1<CLIPS[cur].length){st.i++;st.t=null;cue(null)}else finish()}
 function prev(){const st=ST[cur],c=clip();let t=0;try{t=P.getCurrentTime()}catch(e){}
@@ -308,7 +316,7 @@ function jump(j){ST[cur].i=j;ST[cur].t=null;cue(null)}
 function toggle(){try{P.getPlayerState()===1?P.pauseVideo():P.playVideo()}catch(e){}}
 function onState(e){$("bPlay").textContent=e.data===1?"❚❚ 一時停止":"▶ 再生";if(e.data===0&&mode==="video"&&Date.now()-cueAt>1500&&(ST[cur].t||0)>=clip().e-3)next()}   // v1.6.6: 広告の終わりの「終了」では次へ進まない
 function onErr(e){if(mode!=="video")return;const at=cueAt;msg("この映像は再生できませんでした（コード "+e.data+"）。3秒後に次へ進みます");setTimeout(()=>{if(at===cueAt&&mode==="video")next()},3000)}
-setInterval(()=>{if(mode!=="video"||!P||!P.getCurrentTime)return;const c=clip(),t=P.getCurrentTime(),inClip=P.getPlayerState()===1&&t>=c.s-1;if(inClip)ST[cur].t=t;   // v1.6.6: 広告の再生中は、広告の時間を本編の位置と取り違えない
+setInterval(()=>{if(mode!=="video"||!P||!ready||!P.getCurrentTime)return;const c=clip(),t=P.getCurrentTime(),inClip=P.getPlayerState()===1&&t>=c.s-1;if(inClip)ST[cur].t=t;   // v1.6.6: 広告の再生中は、広告の時間を本編の位置と取り違えない
  if($("cover").classList.contains("on")&&P.getPlayerState()===1&&t>=coverFrom-0.3&&t<c.e)hideCover();   // 指定の位置から再生が始まったら静止画を外す
  if($("cover").classList.contains("on")&&Date.now()-cueAt>2500&&P.getPlayerState()!==1)hideCover();   // v1.6.5: 2.5秒たっても本編が始まらない（YouTube の広告など）ときは静止画を外し、広告とスキップのボタンを見せる
  if(inClip&&t>=c.e-0.2&&Date.now()-cueAt>1500)next()},250);   // 区間の終わりを確実に検出する（YouTube の「終了」通知が来ない場合の保険）
