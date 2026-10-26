@@ -309,6 +309,7 @@ function onState(e){$("bPlay").textContent=e.data===1?"❚❚ 一時停止":"▶
 function onErr(e){if(mode!=="video")return;const at=cueAt;msg("この映像は再生できませんでした（コード "+e.data+"）。3秒後に次へ進みます");setTimeout(()=>{if(at===cueAt&&mode==="video")next()},3000)}
 setInterval(()=>{if(mode!=="video"||!P||!P.getCurrentTime)return;const c=clip(),t=P.getCurrentTime();if(t)ST[cur].t=t;
  if($("cover").classList.contains("on")&&P.getPlayerState()===1&&t>=coverFrom-0.3&&t<c.e)hideCover();   // 指定の位置から再生が始まったら静止画を外す
+ if($("cover").classList.contains("on")&&Date.now()-cueAt>2500&&P.getPlayerState()!==1)hideCover();   // v1.6.5: 2.5秒たっても本編が始まらない（YouTube の広告など）ときは静止画を外し、広告とスキップのボタンを見せる
  if(t>=c.e-0.2&&Date.now()-cueAt>1500)next()},250);   // 区間の終わりを確実に検出する（YouTube の「終了」通知が来ない場合の保険）
 // ---- ボタン ----
 slides.forEach((sl,k)=>{const b=sl.querySelector(".playbtn");if(b)b.addEventListener("click",e=>{e.stopPropagation();openVideo(k,null)});
