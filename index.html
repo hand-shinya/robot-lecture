@@ -85,7 +85,7 @@ ul.pts li::before{content:"";position:absolute;left:4px;top:.68em;width:10px;hei
 <div class="covermain"><h1>ロボットは、どこで働き、どうやって仕事を覚えるのか</h1><p class="lead">暮らし・街・危ない現場の映像と、ロボットの仕事の覚え方から</p></div>
 <div class="meta">映像はすべて一般に公開されている YouTube の動画で、その一部分をその場で再生します。各画面に元の動画の URL を示しています<br>
 操作：→ / ← で移動 ／ 映像は画面の「映像を見る」ボタン（または V キー）／ F 全画面 ／ N 話す内容 ／ P 講師用の窓 ／ G 一覧</div>
-<div class="filewarn" hidden>このファイルを直接開いているため、映像は資料の中で続けて再生できません。Windows では、Google ドライブで<b>フォルダごと</b>ダウンロードして展開し、「講習資料を開く.bat」から開いてください。このまま見る場合は「映像を見る」から1本ずつ YouTube で開けます（YouTube は終わると関係のない動画を続けて流すので、見終わったらタブを閉じてください）。</div></section>
+<div class="filewarn" hidden>このファイルを直接開いているため、映像は資料の中で続けて再生できません。<b>ウェブ版 <a href="https://hand-shinya.github.io/robot-lecture/" target="_blank" rel="noopener">hand-shinya.github.io/robot-lecture</a> で開くと、映像が資料の中で続けて流れます</b>。または Windows では、Google ドライブで<b>フォルダごと</b>ダウンロードして展開し、「講習資料を開く.bat」から開いてください。このまま見る場合は「映像を見る」から1本ずつ YouTube で開けます（YouTube は終わると関係のない動画を続けて流すので、見終わったらタブを閉じてください）。</div></section>
 <section class="slide" data-title="荷物を載せて人について行き、階段も上るロボットが出てきた" data-notes="荷物を載せて、人について行くロボットです。2本の脚の先に車輪があり、自分でバランスをとりながら、持ち主が持つ小さな送信機を追いかけます。ただし画面の表示のとおり、この追従はまだ製品の機能ではなく、実演です。東京の展示会では、荷物を載せたまま階段を駆け上がりました。"><div class="tag">暮らしの中に、もう来ている</div>
 <h2 class="head">荷物を載せて人について行き、階段も上るロボットが出てきた</h2>
 <div class="vbody"><div class="txt"><ul class="pts"><li>2本の脚の先に車輪。自分でバランスをとり、人が持つ小さな送信機を追って、道や石段を進む</li><li>2026年5月の東京の展示会では、荷物を載せたまま階段を駆け上がった</li></ul><div class="badges"><span class="badge">ついて行く映像はメーカーの実演（「製品の機能ではない」と画面に表示）</span><span class="badge">階段の映像は東京の展示会の報道（2026年5月）</span></div></div>
@@ -264,7 +264,8 @@ function refreshBtn(k){const sl=slides[k],b=sl.querySelector(".playbtn");if(!b)r
 // そこで黙って渡さず、正しい開き方と、1本ずつ見る場合の注意を示す。
 function showFM(k){const fm=$("fm"),c=CLIPS[k]||[];const why=location.protocol==="file:"?"このファイルを直接開いているため":"YouTube を読み込めなかったため";
  fm.querySelector(".box").innerHTML=`<h3>${why}、映像を資料の中で続けて再生できません</h3>
- <div class="how"><b>資料の中で続けて再生するには（Windows）</b><br>Google ドライブで<b>フォルダごと</b>ダウンロードし（ZIP は右クリック→「すべて展開」）、展開したフォルダの<b>「講習資料を開く.bat」</b>をダブルクリックしてください。<br>bat だけ、HTML だけをダウンロードしても動きません。</div>
+ <div class="how" style="border-left-color:#1E7D3A"><b>いちばん簡単：ウェブ版で開く（Windows・Mac・スマホ）</b><br><a id="fmweb" href="https://hand-shinya.github.io/robot-lecture/#${k+1}" target="_blank" rel="noopener" style="display:inline-block;margin:6px 0;padding:8px 18px;background:#1E7D3A;color:#fff;border-radius:6px;text-decoration:none;font-weight:700">ウェブ版でこの画面を開く</a><br>インターネットにつながっていれば、映像が資料の中で続けて流れます（YouTube の広告が入ることがあります。5秒たつとスキップできます）。</div>
+ <div class="how"><b>ダウンロードして使う場合（Windows）</b><br>Google ドライブで<b>フォルダごと</b>ダウンロードし（ZIP は右クリック→「すべて展開」）、展開したフォルダの<b>「講習資料を開く.bat」</b>をダブルクリックしてください。<br>bat だけ、HTML だけをダウンロードしても動きません。</div>
  <div>このまま見る場合は、下の映像を1本ずつ YouTube で開けます。<b>YouTube は映像が終わると関係のない動画を自動で続けて流します。</b>見終わったら YouTube のタブを閉じて、この資料に戻ってください。</div>
  <div class="list">${c.map((x,j)=>`<button data-j="${j}">▶ ${j+1}. ${x.label}（${fmt(x.s)}〜${fmt(x.e)}・${x.e-x.s}秒）</button>`).join("")}</div>
  <button class="close">資料に戻る（Esc）</button>`;
@@ -305,12 +306,12 @@ function prev(){const st=ST[cur],c=clip();let t=0;try{t=P.getCurrentTime()}catch
  if(t-c.s>3||st.i===0){st.t=null;cue(null)}else{st.i--;st.t=null;cue(null)}}
 function jump(j){ST[cur].i=j;ST[cur].t=null;cue(null)}
 function toggle(){try{P.getPlayerState()===1?P.pauseVideo():P.playVideo()}catch(e){}}
-function onState(e){$("bPlay").textContent=e.data===1?"❚❚ 一時停止":"▶ 再生";if(e.data===0&&mode==="video"&&Date.now()-cueAt>1500)next()}
+function onState(e){$("bPlay").textContent=e.data===1?"❚❚ 一時停止":"▶ 再生";if(e.data===0&&mode==="video"&&Date.now()-cueAt>1500&&(ST[cur].t||0)>=clip().e-3)next()}   // v1.6.6: 広告の終わりの「終了」では次へ進まない
 function onErr(e){if(mode!=="video")return;const at=cueAt;msg("この映像は再生できませんでした（コード "+e.data+"）。3秒後に次へ進みます");setTimeout(()=>{if(at===cueAt&&mode==="video")next()},3000)}
-setInterval(()=>{if(mode!=="video"||!P||!P.getCurrentTime)return;const c=clip(),t=P.getCurrentTime();if(t)ST[cur].t=t;
+setInterval(()=>{if(mode!=="video"||!P||!P.getCurrentTime)return;const c=clip(),t=P.getCurrentTime(),inClip=P.getPlayerState()===1&&t>=c.s-1;if(inClip)ST[cur].t=t;   // v1.6.6: 広告の再生中は、広告の時間を本編の位置と取り違えない
  if($("cover").classList.contains("on")&&P.getPlayerState()===1&&t>=coverFrom-0.3&&t<c.e)hideCover();   // 指定の位置から再生が始まったら静止画を外す
  if($("cover").classList.contains("on")&&Date.now()-cueAt>2500&&P.getPlayerState()!==1)hideCover();   // v1.6.5: 2.5秒たっても本編が始まらない（YouTube の広告など）ときは静止画を外し、広告とスキップのボタンを見せる
- if(t>=c.e-0.2&&Date.now()-cueAt>1500)next()},250);   // 区間の終わりを確実に検出する（YouTube の「終了」通知が来ない場合の保険）
+ if(inClip&&t>=c.e-0.2&&Date.now()-cueAt>1500)next()},250);   // 区間の終わりを確実に検出する（YouTube の「終了」通知が来ない場合の保険）
 // ---- ボタン ----
 slides.forEach((sl,k)=>{const b=sl.querySelector(".playbtn");if(b)b.addEventListener("click",e=>{e.stopPropagation();openVideo(k,null)});
  const r=sl.querySelector(".restart");if(r)r.addEventListener("click",e=>{e.stopPropagation();openVideo(k,0)});
